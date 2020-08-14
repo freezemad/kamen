@@ -1,6 +1,7 @@
 require 'action_dispatch'
 
 module Kamen
+  # middleware
   module Middleware
     class MockRequest
       def initialize app
@@ -9,49 +10,27 @@ module Kamen
 
       def call env
         request = ActionDispatch::Request.new(env)
-        # request.path  '/wechat_v1/orders/1
-        _result = nil
+
         Rails.application.routes.router.recognize(request) do |route, params|
-          # params => {:controller=>"wechat_v1/orders", :action=>"show", :id=>"1"}
-          _filename = "#{Rails.root}/app/controllers/#{params[:controller]}_controller.rb"
+          # params => {:controller=>"v1/users", :action=>"show", :id=>"1"}
 
-
-          if File.exists?(_filename)
-            _file =
-              File.open(_filename, 'r')
-            _started = false
-            _finished = false
-            _data = []
-            _file.each_line do |line|
-              if line.to_s =~ /def /
-                if _data.blank?
-                  next
-                else
-                  if line.to_s =~ /def #{params[:action]}/ # hit
-                    _result = [200, {}, [_data.join]]
-                    break
-                  else #
-                    _data = []
-                    next
-                  end
-                end
-              end
-              if line.to_s =~ /MockData/
-                if _started
-                  _started = false
-                else
-                  _started = true
-                end
-                next
-              end
-              if _started
-                _data << line.gsub(/^.*\#/,'')
-              end
+          resp = ::Kamen::MockCache.find_mock_response(params)
+          if resp[:read]  # source file is parsed
+            unless resp[:data].nil? # cache hits, there is a mock data
+              return [200, {}, [resp[:data]]]
+            else # no mock data given, pass request to rails application
+              # just skip this branch and exit block to call downstream middleware
             end
-            _file.close
-          end
+          else
 
-          return _result unless _result.blank?
+            if ::Kamen::Parser.handle_source_file(params)
+
+              # there is some data written in cache so we can load again.
+              resp = ::Kamen::MockCache.find_mock_response(params)
+
+              return [200, {}, [resp[:data]]] if resp[:read] && resp[:data]
+            end
+          end
         end
 
         @status, @headers, @response = @app.call(env)

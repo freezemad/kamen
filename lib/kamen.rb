@@ -1,5 +1,8 @@
 require "kamen/version"
 require "kamen/control"
+require "kamen/parser"
+require "kamen/mock_cache"
+require "kamen/middleware/mock_request"
 
 # == Kamen Initialization
 #
