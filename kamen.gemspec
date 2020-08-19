@@ -6,8 +6,8 @@ require "kamen/version"
 Gem::Specification.new do |spec|
   spec.name          = "kamen"
   spec.version       = Kamen::VERSION
-  spec.authors       = ["iChen"]
-  spec.email         = ["st.chenlei@gmail.com"]
+  spec.authors       = ["freezemad"]
+  spec.email         = ["frozenderk@gmail.com"]
 
   spec.summary       = %q{"A light-weight api mock engine."}
   spec.description   = %q{"A light-weight api mock engine."}
